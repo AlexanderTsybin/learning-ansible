@@ -1,0 +1,46 @@
+[sock]
+listen = /var/run/php-fpm/sock-1.sock
+listen.owner = nginx
+listen.group = nginx
+listen.mode = 0666
+user = nginx
+group = nginx
+
+pm = dynamic
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 15
+pm.max_children = 200
+pm.max_requests = 50
+pm.process_idle_timeout = 30s
+
+catch_workers_output = yes
+php_value[session.save_handler] = files
+php_value[session.save_path] = /home/nginx/tmp
+php_admin_value[log_error] = /home/nginx/log/nginx.error.log
+php_value[default_charset]=utf-8
+pm.status_path = /php-fpm_status
+
+[sock-2]
+listen = /var/run/php-fpm/sock-2.sock
+listen.owner = nginx
+listen.group = nginx
+listen.mode = 0666
+user = nginx
+group = nginx
+
+pm = dynamic
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 15
+pm.max_children = 200
+pm.max_requests = 50
+pm.process_idle_timeout = 30s
+
+catch_workers_output = yes
+php_value[session.save_handler] = files
+php_value[session.save_path] = /home/nginx/tmp
+php_admin_value[log_error] = /home/nginx/log/nginx.error.log
+php_value[default_charset]=utf-8
+pm.status_path = /php-fpm_status
+

@@ -1,0 +1,7 @@
+---
+mariadb_version: 10.2
+mysql_secure_installation: true 
+mysql_root_password: loop5def
+postfix_myhostname: 'mil.tsybin.ml'
+postfix_mydomain: 'tsybin.ml'
+postfix_mail_homedir: '/mnt/mail'

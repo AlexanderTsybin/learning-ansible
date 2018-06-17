@@ -1,0 +1,130 @@
+---
+- name: Create nginx homedir
+  file: 
+        path: /home/nginx
+        state: directory
+        owner: nginx
+        group: nginx
+        mode: 0755
+- name: Create nginx www-dir
+  file:
+        path: /home/nginx/www
+        state: directory
+        owner: nginx
+        group: nginx
+        mode: 0755
+
+- name: Create nginx sample www-dir
+  file:
+        path: /home/nginx/www/{{ ansible_host }}
+        state: directory
+        owner: nginx
+        group: nginx
+        mode: 0755
+
+- name: Create phpinfo page
+  copy: >
+          src={{ item.src }}
+          dest={{ item.dest }}
+  with_items:
+          - { src: index.php.j2, dest: "/home/nginx/www/{{ ansible_host }}/index.php" }
+
+
+- name: Create nginx log-dir
+  file:
+        path: /home/nginx/log
+        state: directory
+        owner: nginx
+        group: nginx
+        mode: 0755
+
+- name: Create nginx log-files
+  file:
+        path: /home/nginx/log/nginx.error.log
+        state: touch
+        owner: nginx
+        group: nginx
+        mode: 0644
+
+- name: Create nginx log-files
+  file:
+        path: /home/nginx/log/nginx.access.log
+        state: touch
+        owner: nginx
+        group: nginx
+        mode: 0644
+
+- name: Create nginx tmp-dir
+  file:
+        path: /home/nginx/tmp
+        state: directory
+        owner: nginx
+        group: nginx
+        mode: 0755
+
+- name: Create php-fpm dir
+  file:
+        path: /var/run/php-fpm/
+        state: directory
+        owner: root
+        group: root
+        mode: 0755 
+
+- name: Create nginx conf.d dir
+  file:
+        path: /etc/nginx/conf.d/
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+- name: Create nginx vhosts dir
+  file: 
+        path: /etc/nginx/vhosts
+        state: directory
+        owner: root
+        group: root
+        mode: 0755  
+
+- name: Copy config files
+  copy: >
+          src={{ item.src }}
+          dest={{ item.dest }}
+  with_items:
+          - { src: socket.conf.j2, dest: /etc/opt/remi/php72/php-fpm.d/www.conf }
+          - { src: upstream.conf.j2, dest: /etc/nginx/conf.d/upstream.conf }
+          - { src: nginx.conf.j2, dest: /etc/nginx/nginx.conf }
+
+- name: copy nginx template
+  template: >
+        src={{ item.src }}
+        dest={{ item.dest }}
+  with_items:
+          - { src: example_vhost.conf.j2, dest: /etc/nginx/vhosts/example_vhost.conf }
+          
+- name: Start and enable configured services
+  service: name={{ item }} state=restarted enabled=yes
+  with_items:
+          - nginx
+          - php72-php-fpm
+          - mariadb
+
+- name: Copy mysql config
+  copy: >
+          src={{ item.src }}
+          dest={{ item.dest }}
+  with_items:
+          - { src: my.cnf.j2, dest: /root/.my.cnf }
+
+- name: Set root Password
+  mysql_user: name=root host={{ item }} password={{ mysql_root_password }} state=present
+  with_items:
+    - localhost
+
+- name: Copy mysql config 
+  copy: >
+          src={{ item.src }}
+          dest={{ item.dest }}
+  with_items:
+          - { src: my.cnf.j2, dest: /root/.my.cnf }
+

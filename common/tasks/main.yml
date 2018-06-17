@@ -1,0 +1,5 @@
+---
+#- include: common.yml
+#- include: install.yml
+#- include: configure.yml
+- include: configure-postfix.yml

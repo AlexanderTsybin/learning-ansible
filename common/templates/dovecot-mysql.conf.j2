@@ -1,0 +1,5 @@
+driver = mysql
+default_pass_scheme = CRYPT
+connect = host=127.0.0.1 dbname=postfix user=postfix password=12345678
+user_query = SELECT '{{ postfix_mail_homedir }}/%d/%u' as home, 'maildir:{{ postfix_mail_homedir }}/%d/%u' as mail, 10000 AS uid, 10000 AS gid, concat('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active = '1'
+password_query = SELECT username as user, password, '{{ postfix_mail_homedir }}/%d/%u' as userdb_home, 'maildir:{{ postfix_mail_homedir }}/%d/%u' as userdb_mail, 10000 as userdb_uid, 10000 as userdb_gid, concat('*:bytes=', quota) AS userdb_quota_rule FROM mailbox WHERE username = '%u' AND active = '1'

@@ -1,0 +1,16 @@
+---
+# install some common packages and add repos
+- name: Install requires package for use yum module
+  yum: name=libselinux-python state=present
+
+- name: Install remi-release
+  yum: name=http://rpms.remirepo.net/enterprise/remi-release-7.rpm state=present disable_gpg_check=yes
+
+- name: Add mariadb repo file
+  template: src=mariadb_centos.repo.j2 dest=/etc/yum.repos.d/mariadb.repo owner=root group=root mode=0644
+
+- name: Install epel-release
+  yum: name=epel-release state=latest
+
+- name: Disable SELinux
+  selinux: state=disabled

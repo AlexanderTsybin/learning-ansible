@@ -1,0 +1,132 @@
+---
+# Install and configure mailserver
+
+- name: Create a new database
+  mysql_db: name=postfix state=present collation=utf8_general_ci
+- name: Create a database user
+  mysql_user: name=postfix password=12345678 priv='postfix.*:ALL' host=localhost state=present
+
+- name: Install postfix
+  yum: name=postfix state=latest
+
+- name: Install dovecot and deps
+  yum: name={{item}} state=latest
+  with_items:
+          - dovecot
+          - dovecot-mysql
+          - dovecot-pigeonhole
+
+- name: Copy config files
+  template:
+          src: main.cf.j2
+          dest: /etc/postfix/main.cf
+          owner: root
+          group: root
+          mode: 0644
+
+- name: Create postfix mysql directory
+  file:
+        path: /etc/postfix/mysql
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+- name: Copy postifx mysql config files
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+          - { src: master.cf.j2, dest: /etc/postfix/master.cf }
+          - { src: virtual_alias_domain_maps.cf.j2, dest: /etc/postfix/mysql/virtual_alias_domain_maps.cf }
+          - { src: virtual_mailbox_domains.cf.j2, dest: /etc/postfix/mysql/virtual_mailbox_domains.cf }
+          - { src: virtual_alias_maps.cf.j2, dest: /etc/postfix/mysql/virtual_alias_maps.cf }
+          - { src: virtual_mailbox_maps.cf.j2, dest: /etc/postfix/mysql/virtual_mailbox_maps.cf }
+          - { src: relay_domains.cf.j2, dest: /etc/postfix/mysql/relay_domains.cf }
+ 
+- name: Create certificate dirs
+  file: 
+        path: /etc/postfix/certs
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+- name: Generate Self-Signed cert 
+  command: openssl req -new -x509 -days 3650 -nodes -subj "/C=UA/ST=Kiev/L=Kiev/O=IT/CN=${postfix_myhostname}" -keyout /etc/postfix/certs/key.pem -out /etc/postfix/certs/cert.pem
+
+- name: Copy dovecot config file
+  template: 
+        src: dovecot.conf.j2
+        dest: /etc/dovecot/dovecot.conf 
+        owner: root
+        group: root
+        mode: 0644
+
+- name: Ensure that vmail group exists
+  group:
+          name: vmail
+          gid: 10000
+          state: present
+
+- name: Ensure that vmail user exists
+  user: 
+        name: vmail
+        uid: 10000
+        group: vmail
+        home: "{{ postfix_mail_homedir }}" 
+        state: present
+
+- name: Ensure that vmail's homedir exists
+  file:
+          path: "{{ postfix_mail_homedir }}"
+          state: directory
+          owner: vmail
+          group: vmail
+          mode: 0755
+
+- name: Copy dovecot-mysql config
+  template: 
+        src: dovecot-mysql.conf.j2
+        dest: /etc/dovecot/dovecot-mysql.conf
+        owner: root
+        group: root
+        mode: 0644
+
+- name: Ensure that dovecot log dir exists
+  file: 
+        path: /var/log/dovecot
+        state: directory
+        owner: vmail
+        group: dovecot
+        mode: 0755
+
+- name: Create dovecot log-files
+  file: 
+        path: "{{ item }}"
+        state: touch
+        owner: vmail
+        group: dovecot
+        mode: 0644
+  with_items:
+          - /var/log/dovecot/mail.log
+          - /var/log/dovecot/info.log
+          - /var/log/dovecot/debug.log
+          - /var/log/dovecot/lda-errors.log
+          - /var/log/dovecot/lda-deliver.log
+          - /var/log/dovecot/lmtp.log 
+
+- name: Ensure that Sieve and acl folders exists
+  file: 
+        path: "{{ item }}"
+        state: directory
+        owner: vmail
+        group: vmail
+        mode: 0755
+  with_items:
+          - /mnt/mail/sieve
+          - /mnt/mail/shared-folders
+
+- name: Enable and restart services
+  service: name={{ item }} state=restarted enabled=yes
+  with_items:
+          - postfix
+          - dovecot

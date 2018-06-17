@@ -1,0 +1,11 @@
+---
+
+- hosts: docker
+  vars:
+          ansible_host: 10.0.0.22
+          mariadb_version: 10.2
+          mysql_secure_installation: true 
+          mysql_root_password: loop5def
+  roles:
+          - { role: common }
+ 
